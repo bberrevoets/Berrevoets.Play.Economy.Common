@@ -2,6 +2,6 @@
 
 public class ServiceSettings
 {
-    public string DatabaseName   { get; init; }
-    public string CollectionName { get; init; }
+    public string DatabaseName   { get; init; } = string.Empty;
+    public string CollectionName { get; init; } = string.Empty;
 }

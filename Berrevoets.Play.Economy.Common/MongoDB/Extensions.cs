@@ -27,7 +27,7 @@ public static class Extensions
         builder.Services.AddSingleton<IRepository<T>>(serviceProvider =>
         {
             var database = serviceProvider.GetService<IMongoDatabase>();
-            return new MongoRepository<T>(database, collectionName);
+            return new MongoRepository<T>(database!, collectionName);
         });
 
         return builder;
