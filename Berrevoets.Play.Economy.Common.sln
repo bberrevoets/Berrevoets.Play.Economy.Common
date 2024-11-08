@@ -5,6 +5,12 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Berrevoets.Play.Economy.Common", "Berrevoets.Play.Economy.Common\Berrevoets.Play.Economy.Common.csproj", "{2F49E022-DF1E-4AEE-9248-3204CCBF60FC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{FB0C05C5-9D4C-4225-9167-A2AA3C0CA5EA}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\CI-development.yml = .github\workflows\CI-development.yml
+		.github\workflows\CI.yml = .github\workflows\CI.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
