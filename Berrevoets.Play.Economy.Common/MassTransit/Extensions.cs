@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using GreenPipes;
 using MassTransit;
 using MassTransit.Definition;
 using Microsoft.Extensions.Configuration;
@@ -14,11 +15,12 @@ public static class Extensions
         builder.Services.AddMassTransit(configure =>
         {
             configure.AddConsumers(Assembly.GetEntryAssembly());
-            
+
             configure.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(builder.Configuration.GetConnectionString("rabbitmq"));
                 cfg.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter(prefix, false));
+                cfg.UseMessageRetry(retryConfigurator => { retryConfigurator.Interval(3, TimeSpan.FromSeconds(5)); });
             });
         });
 
