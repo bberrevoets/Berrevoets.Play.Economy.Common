@@ -1,9 +1,6 @@
 name: Build and Publish Preview NuGet Package
 
 on:
-  push:
-    branches:
-      - Development
   pull_request:
     branches:
       - Development
