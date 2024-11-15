@@ -62,6 +62,7 @@ jobs:
       run: dotnet restore
 
     - name: Clean output directory
+      shell: bash
       run: |
         if [ -d "${{ github.workspace }}/output" ]; then
           rm -rf "${{ github.workspace }}/output"
