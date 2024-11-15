@@ -5,6 +5,9 @@ on:
     branches:
       - Development
   workflow_dispatch:
+  push:
+    branches:
+      - Development
 
 jobs:
   build:
@@ -29,7 +32,20 @@ jobs:
     - name: Run tests
       run: dotnet test --no-restore --verbosity normal
 
+    - name: Extract version from .csproj and append -preview
+      id: extract-version
+      run: |
+        VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj)
+        if [ -z "$VERSION" ]; then
+          echo "Error: Version could not be extracted."
+          exit 1
+        fi
+        VERSION="$VERSION-preview"
+        echo "::set-output name=version::$VERSION"
+        echo "Version extracted: $VERSION"
+
   publish:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/Development') }}
     needs: build
     runs-on: windows-latest
     steps:
@@ -44,35 +60,29 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Extract version from .csproj and append -preview
-      id: extract-version
-      shell: bash
+    - name: Clean output directory
       run: |
-        VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj)
-        if [ -z "$VERSION" ]; then
-          echo "Error: Version could not be extracted."
-          exit 1
+        if [ -d "${{ github.workspace }}/output" ]; then
+          rm -rf "${{ github.workspace }}/output"
         fi
-        VERSION="$VERSION-preview"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "Version extracted: $VERSION"
+        mkdir "${{ github.workspace }}/output"
 
     - name: Build the solution (Release) again for packaging
       run: |
-        echo "Building NuGet package with version: ${{ env.VERSION }}"
-        dotnet build Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release /p:PackageVersion=${{ env.VERSION }}
+        echo "Building NuGet package with version: ${{ needs.build.outputs.version }}"
+        dotnet build Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release /p:PackageVersion=${{ needs.build.outputs.version }}
 
     - name: Pack Preview NuGet package (with symbols)
       run: |
-        echo "Packing NuGet package with version: ${{ env.VERSION }}"
-        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}\output" /p:PackageVersion=${{ env.VERSION }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
+        echo "Packing NuGet package with version: ${{ needs.build.outputs.version }}"
+        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
 
     - name: Publish Preview NuGet package
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: dotnet nuget push "${{ github.workspace }}\output\*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      run: dotnet nuget push "${{ github.workspace }}/output/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
     - name: Publish Symbol Package (.snupkg)
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: dotnet nuget push "${{ github.workspace }}\output\*.snupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      run: dotnet nuget push "${{ github.workspace }}/output/*.snupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -5,6 +5,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -17,7 +20,7 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x' # Adjust according to your project's target framework
+        dotnet-version: '9.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
@@ -29,7 +32,7 @@ jobs:
       run: dotnet test --no-restore --verbosity normal
 
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     needs: build
     runs-on: windows-latest
 
@@ -40,13 +43,17 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x' # Adjust according to your project's target framework
+        dotnet-version: '9.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build the solution
-      run: dotnet build --configuration Release --no-restore
+    - name: Clean output directory
+      run: |
+        if [ -d "${{ github.workspace }}/output" ]; then
+          rm -rf "${{ github.workspace }}/output"
+        fi
+        mkdir "${{ github.workspace }}/output"
 
     - name: Pack Final NuGet package (with symbols)
       run: dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}\output" /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
