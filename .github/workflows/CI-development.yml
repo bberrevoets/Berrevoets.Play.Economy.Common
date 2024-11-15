@@ -42,8 +42,9 @@ jobs:
           exit 1
         fi
         VERSION="$VERSION-preview"
-        echo "::set-output name=version::$VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Version extracted: $VERSION"
+
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/Development') }}
@@ -77,7 +78,11 @@ jobs:
     - name: Pack Preview NuGet package (with symbols)
       run: |
         echo "Packing NuGet package with version: ${{ needs.build.outputs.version }}"
-        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
+        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg /p:IncludeSource=true
+
+    - name: List output directory
+      shell: bash
+      run: ls "${{ github.workspace }}/output"
 
     - name: Publish Preview NuGet package
       env:

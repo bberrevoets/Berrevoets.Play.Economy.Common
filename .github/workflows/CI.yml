@@ -41,7 +41,7 @@ jobs:
           echo "Error: Version could not be extracted."
           exit 1
         fi
-        echo "::set-output name=version::$VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Version extracted: $VERSION"
 
   publish:
@@ -76,7 +76,11 @@ jobs:
     - name: Pack Final NuGet package (with symbols)
       run: |
         echo "Packing NuGet package with version: ${{ needs.build.outputs.version }}"
-        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
+        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg /p:IncludeSource=true
+
+    - name: List output directory
+      shell: bash
+      run: ls "${{ github.workspace }}/output"
 
     - name: Publish Final NuGet package
       env:
