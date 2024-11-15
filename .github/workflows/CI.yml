@@ -5,11 +5,15 @@ on:
     branches:
       - main
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
-
+    outputs:
+      version: ${{ steps.extract-version.outputs.version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -17,7 +21,7 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x' # Adjust according to your project's target framework
+        dotnet-version: '9.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
@@ -28,11 +32,22 @@ jobs:
     - name: Run tests
       run: dotnet test --no-restore --verbosity normal
 
+    - name: Extract version from .csproj
+      id: extract-version
+      shell: bash
+      run: |
+        VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj)
+        if [ -z "$VERSION" ]; then
+          echo "Error: Version could not be extracted."
+          exit 1
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version extracted: $VERSION"
+
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     needs: build
     runs-on: windows-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -40,16 +55,32 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x' # Adjust according to your project's target framework
+        dotnet-version: '9.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build the solution
-      run: dotnet build --configuration Release --no-restore
+    - name: Clean output directory
+      shell: bash
+      run: |
+        if [ -d "${{ github.workspace }}/output" ]; then
+          rm -rf "${{ github.workspace }}/output"
+        fi
+        mkdir "${{ github.workspace }}/output"
+
+    - name: Build the solution (Release) again for packaging
+      run: |
+        echo "Building NuGet package with version: ${{ needs.build.outputs.version }}"
+        dotnet build Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release /p:PackageVersion=${{ needs.build.outputs.version }}
 
     - name: Pack Final NuGet package (with symbols)
-      run: dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}\output" /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
+      run: |
+        echo "Packing NuGet package with version: ${{ needs.build.outputs.version }}"
+        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg /p:IncludeSource=true
+
+    - name: List output directory
+      shell: bash
+      run: ls "${{ github.workspace }}/output"
 
     - name: Publish Final NuGet package
       env:
