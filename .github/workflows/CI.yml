@@ -76,7 +76,7 @@ jobs:
     - name: Pack Final NuGet package (with symbols)
       run: |
         echo "Packing NuGet package with version: ${{ needs.build.outputs.version }}"
-        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg /p:IncludeSource=true
+        dotnet pack Berrevoets.Play.Economy.Common/Berrevoets.Play.Economy.Common.csproj --configuration Release --output "${{ github.workspace }}/output" /p:PackageVersion=${{ needs.build.outputs.version }} /p:IncludeSymbols=true /p:SymbolPackageFormat=snupkg
 
     - name: List output directory
       shell: bash
