@@ -1,7 +1,5 @@
 ﻿using System.Reflection;
-using GreenPipes;
 using MassTransit;
-using MassTransit.Definition;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
@@ -23,8 +21,6 @@ public static class Extensions
                 cfg.UseMessageRetry(retryConfigurator => { retryConfigurator.Interval(3, TimeSpan.FromSeconds(5)); });
             });
         });
-
-        builder.Services.AddMassTransitHostedService();
 
         return builder;
     }
