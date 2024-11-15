@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	  <Version>1.1.2</Version>
+	  <Version>1.1.3</Version>
 	  <Authors>Bert Berrevoets</Authors>
 	  <Company>Berrevoets Systems</Company>
 	  <Product>Berrevoets.Play.Economy.Common</Product>
